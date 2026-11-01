@@ -8,3 +8,6 @@ Live address: https://scottstockwellworkmatik.github.io/ai-roles-assessment/
 
 ## Shared IDs and files
 Roles have stable IDs (R01 to R31) and activities have stable IDs (A001 to A519). Export Excel produces a file with a "Workmatik data" sheet and a "Selected activities" sheet that other Workmatik tools can load. Save (JSON) and Load also work with older progress files.
+
+## Custom roles and activities
+Use "+ Add a role" and "+ Add an activity" to include roles or activities that are not in the list. Custom items get their own IDs (RC## for roles, AC### for activities), are saved in the Save (JSON) and Excel files, and are restored when the file is loaded.

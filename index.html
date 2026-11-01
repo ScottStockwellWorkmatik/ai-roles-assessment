@@ -60,6 +60,23 @@ body{font-family:'Neue Haas Grotesk Display Pro',Helvetica,Arial,sans-serif;back
 .rfilter{width:100%;box-sizing:border-box;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.18);border-radius:6px;padding:6px 8px;color:#fff;font-size:12px;font-family:inherit;margin-bottom:2px}
 .rfilter::placeholder{color:#9FC9DD}
 .rfilter:focus{outline:none;border-color:#F25D27}
+.addbtn{display:block;width:100%;margin:12px 0 0;padding:8px 10px;border:1.5px dashed rgba(93,193,255,.7);border-radius:6px;background:transparent;color:#5DC1FF;font:600 12px inherit;font-family:inherit;cursor:pointer;text-align:left}
+.addbtn:hover{background:rgba(93,193,255,.15)}
+.addbtn.rm{border-color:rgba(255,255,255,.3);color:#C9C9C9}
+.np.cu{background:rgba(242,93,39,.25);color:#F25D27}
+.lnk{background:none;border:none;color:#024873;text-decoration:underline;font:inherit;font-size:11px;cursor:pointer;margin-left:6px;padding:0}
+.ovl{display:none;position:fixed;inset:0;background:rgba(13,13,13,.55);z-index:50;align-items:center;justify-content:center;padding:16px}
+.dlg{background:#fff;border-radius:12px;padding:22px 24px;width:100%;max-width:460px;box-shadow:0 10px 40px rgba(0,0,0,.35);font-family:inherit;color:#0D0D0D}
+.dlg h2{margin:0 0 4px;font-size:18px}
+.dlg p{margin:0 0 14px;font-size:13px;color:#4a5560}
+.dlg label{display:block;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#024873;margin:12px 0 4px}
+.dlg input,.dlg select{width:100%;box-sizing:border-box;padding:9px 10px;border:1.5px solid #D9D9D9;border-radius:6px;font:14px inherit;font-family:inherit}
+.dlg input:focus,.dlg select:focus{outline:none;border-color:#F25D27}
+.dlg .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+.dlg .btns button{padding:9px 14px;border-radius:6px;border:1.5px solid #024873;background:#fff;color:#024873;font:600 13px inherit;font-family:inherit;cursor:pointer}
+.dlg .btns button.pri{background:#F25D27;border-color:#F25D27;color:#0D0D0D}
+.dlg .err{color:#B3261E;font-size:12px;min-height:16px;margin-top:6px}
+.dlg .ok{color:#0b6b2c;font-size:12px;min-height:16px}
 .slabel{font-size:10px;font-weight:700;color:#9FC9DD;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;padding-left:4px}
 .row{display:flex;align-items:center;gap:6px;margin-bottom:3px}
 .tick{width:17px;height:17px;border-radius:3px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;line-height:1;transition:all .12s}
@@ -176,6 +193,23 @@ main#main{flex:1;display:flex;flex-direction:column}
   </div>
 </div>
 </main>
+<div class="ovl" id="dlgRole" role="dialog" aria-modal="true" aria-labelledby="rT"><div class="dlg">
+  <h2 id="rT">Add a role</h2><p>Add a role that isn't in the list. You'll add its activities next.</p>
+  <label for="rName">Role name</label><input id="rName" maxlength="80" placeholder="e.g. Marketing Technologist" onkeydown="if(event.key==='Enter')submitRole()">
+  <label for="rGroup">Group</label><select id="rGroup"></select>
+  <div class="err" id="rErr"></div>
+  <div class="btns"><button onclick="showDlg('dlgRole',false)">Cancel</button><button class="pri" onclick="submitRole()">Add role</button></div>
+</div></div>
+<div class="ovl" id="dlgAct" role="dialog" aria-modal="true" aria-labelledby="aT"><div class="dlg">
+  <h2 id="aT">Add an activity</h2><p>Add a task activity to any role. Pick an existing task or type a new one.</p>
+  <label for="aRole">Role</label><select id="aRole" onchange="fillTasks()"></select>
+  <label for="aTask">Task</label><input id="aTask" maxlength="100" list="taskList" placeholder="e.g. Community Management"><datalist id="taskList"></datalist>
+  <label for="aAct">Activity</label><input id="aAct" maxlength="160" placeholder="e.g. Member onboarding and moderation" onkeydown="if(event.key==='Enter')submitAct(true)">
+  <label for="aCls">AI suitability classification</label>
+  <select id="aCls"><option>Full automation</option><option selected>Augmentation</option><option>Human only</option></select>
+  <div class="err" id="aErr"></div><div class="ok" id="aOk"></div>
+  <div class="btns"><button onclick="showDlg('dlgAct',false)">Done</button><button class="pri" onclick="submitAct(true)">Add and keep going</button></div>
+</div></div>
 <footer class="site-footer"><div class="wrap"><p>&copy; Workmatik. This tool supports role and workforce planning and is not professional advice.</p></div></footer>
 <script src="lib/xlsx.full.min.js"></script>
 <script>
@@ -198,6 +232,52 @@ const TOOL_NAME="Workmatik AI Roles Assessment", TOOL_KEY="roles", DATA_VERSION=
 let roleFilter="";
 const roleType = {};
 DATA.forEach(d=>{ roleType[d.role] = d.type; });
+const BASE_N = DATA.length;
+const BASE_ROLETYPE = Object.assign({}, roleType);
+const BASE_RID = {}; DATA.forEach(d=>{ BASE_RID[d.rid] = d.role; });
+const BASE_GROUPS = JSON.parse(JSON.stringify(GROUPS));
+let cust = {roles:[], acts:[], nr:0, na:0};
+const CLS_LIST = ["Full automation","Augmentation","Human only"];
+function pad(n,w){ return String(n).padStart(w,"0"); }
+function rebuildAll(){
+  const sc = [...scope].map(i=>DATA[i].id);
+  const ov = Object.keys(ovr).map(k=>[DATA[k].id, ovr[k]]);
+  DATA.length = BASE_N;
+  const rmap = {}; cust.roles.forEach(r=>{ rmap[r.rid] = r.name; });
+  cust.acts.forEach(a=>{ const nm = rmap[a.rid] || BASE_RID[a.rid]; if(!nm) return; DATA.push({role:nm,task:a.task,activity:a.activity,cls:a.cls,type:rmap[a.rid]?"Custom role":"Custom activity",id:a.id,rid:a.rid,custom:true}); });
+  GROUPS.length = 0;
+  BASE_GROUPS.forEach(g=>GROUPS.push({group:g.group, roles:[...g.roles]}));
+  cust.roles.forEach(r=>{ const g = GROUPS.find(x=>x.group===r.group); if(g) g.roles.push(r.name); });
+  GROUPS.forEach(g=>g.roles.sort((a,b)=>a.localeCompare(b)));
+  roles.length = 0; GROUPS.forEach(g=>g.roles.forEach(r=>roles.push(r)));
+  [groupOf, roleId, roleType, idToIdx].forEach(o=>{ Object.keys(o).forEach(k=>delete o[k]); });
+  GROUPS.forEach(g=>g.roles.forEach(r=>{ groupOf[r] = g.group; }));
+  Object.assign(roleType, BASE_ROLETYPE);
+  DATA.forEach((d,i)=>{ roleId[d.role] = d.rid; idToIdx[d.id] = i; });
+  cust.roles.forEach(r=>{ roleId[r.name] = r.rid; roleType[r.name] = "Custom role"; });
+  scope = new Set(sc.map(id=>idToIdx[id]).filter(i=>i!==undefined));
+  ovr = {}; ov.forEach(([id,v])=>{ if(idToIdx[id]!==undefined) ovr[idToIdx[id]] = v; });
+}
+function cleanStr(v,n){ return String(v==null?"":v).replace(/\s+/g," ").trim().slice(0,n); }
+function setCustom(c){
+  const out = {roles:[], acts:[], nr:0, na:0};
+  const names = new Set([...BASE_GROUPS.flatMap(g=>g.roles)].map(x=>x.toLowerCase()));
+  const gnames = new Set(BASE_GROUPS.map(g=>g.group));
+  if(c && Array.isArray(c.roles)){
+    c.roles.forEach(r=>{
+      const rid = cleanStr(r.rid,8), name = cleanStr(r.name,80), group = cleanStr(r.group,60);
+      if(!/^RC\d+$/.test(rid) || !name || !gnames.has(group) || names.has(name.toLowerCase())) return;
+      names.add(name.toLowerCase()); out.roles.push({rid,name,group}); out.nr = Math.max(out.nr, +rid.slice(2));
+    });
+    (Array.isArray(c.acts)?c.acts:[]).forEach(a=>{
+      const id = cleanStr(a.id,8), rid = cleanStr(a.rid,8), task = cleanStr(a.task,100), activity = cleanStr(a.activity,160), cl = cleanStr(a.cls,30);
+      if(!/^AC\d+$/.test(id) || !(out.roles.some(r=>r.rid===rid) || BASE_RID[rid]) || !task || !activity || !CLS_LIST.includes(cl)) return;
+      out.acts.push({id,rid,task,activity,cls:cl}); out.na = Math.max(out.na, +id.slice(2));
+    });
+  }
+  if(c){ out.nr = Math.max(out.nr, +c.nr||0); out.na = Math.max(out.na, +c.na||0); }
+  cust = out; scope = new Set(); ovr = {}; rebuildAll();
+}
 
 function tasksForRole(r){ return [...new Set(DATA.filter(d=>d.role===r).map(d=>d.task))]; }
 function rIdxs(r){ return DATA.map((d,i)=>d.role===r?i:-1).filter(i=>i>=0); }
@@ -245,11 +325,12 @@ function renderRoles(){
       const isNew = roleType[r] === "New AI-enabled role";
       h += '<div class="row">' +
         '<div class="tick ' + tickCls + '" data-act="tr" data-r="' + esc(r) + '">' + tickChar + '</div>' +
-        '<button class="rbtn ' + btnCls + '" data-act="vr" data-r="' + esc(r) + '">' + esc(r) + (isNew?'<span class="np">NEW</span>':'') + '</button>' +
+        '<button class="rbtn ' + btnCls + '" data-act="vr" data-r="' + esc(r) + '">' + esc(r) + (isNew?'<span class="np">NEW</span>':'') + (roleType[r]==="Custom role"?'<span class="np cu">CUSTOM</span>':'') + '</button>' +
         '</div>';
     });
   });
   if(!shown) h += '<div class="ph" style="padding:12px 4px;">No roles match</div>';
+  h += '<button class="addbtn" data-act="addR">+ Add a role</button>';
   const hadFocus = document.activeElement && document.activeElement.id === "rfilter";
   el.innerHTML = h;
   const f = document.getElementById("rfilter");
@@ -262,6 +343,7 @@ function renderTasks(){
   if(!vRole){ el.innerHTML = '<div class="ph" style="padding:20px;text-align:center;">Select a role</div>'; return; }
   const tasks = tasksForRole(vRole);
   let h = '<div class="slabel">' + esc(vRole) + '</div>';
+  tasks.length || (h += '<div class="ph" style="padding:12px 4px;height:auto;">No activities yet</div>');
   tasks.forEach(t=>{
     const idxs = tIdxs(vRole,t);
     const st = stateOf(idxs);
@@ -273,6 +355,8 @@ function renderTasks(){
       '<button class="tbtn ' + btnCls + '" data-act="vt" data-r="' + esc(vRole) + '" data-t="' + esc(t) + '">' + esc(t) + '</button>' +
       '</div>';
   });
+  h += '<button class="addbtn" data-act="addA">+ Add an activity</button>';
+  if(roleType[vRole]==="Custom role") h += '<button class="addbtn rm" data-act="rmR">Remove this custom role</button>';
   el.innerHTML = h;
 }
 
@@ -292,7 +376,7 @@ function renderActs(){
     const c = cls(i);
     h += '<div class="arow ' + (sel?"sel":"") + '">' +
       '<div class="achk ' + (sel?"on":"off") + '" data-act="ta" data-i="' + i + '">' + (sel?"&#10003;":"") + '</div>' +
-      '<div class="aname">' + esc(DATA[i].activity) + '</div>' +
+      '<div class="aname">' + esc(DATA[i].activity) + (DATA[i].custom?' <button class="lnk" data-act="rmA" data-id="' + DATA[i].id + '">Remove</button>':'') + '</div>' +
       '<div style="width:150px"><span class="badge ' + badgeCls(DATA[i].cls) + '">' + esc(DATA[i].cls) + '</span></div>' +
       '<div style="width:150px"><select class="osel ' + (isOvr?"ovr":"def") + '" data-act="ov" data-i="' + i + '">' +
         '<option value="">' + (isOvr?"Reset to default":"No override") + '</option>' +
@@ -360,7 +444,7 @@ function bapExport(){
   if(typeof XLSX === "undefined"){ alert("The Excel library did not load. Try the CSV export instead."); return; }
   const clientName = document.getElementById("clientName").value.trim();
   const ts = new Date().toISOString().slice(0,10);
-  const meta = [["Field","Value"],["Tool",TOOL_NAME],["Tool key",TOOL_KEY],["Data version",DATA_VERSION],["Schema","workmatik-shared-ids-1"],["Organisation",clientName],["Exported",ts],["Roles in scope",metrics().scopedRoles],["Activities in scope",idxs.length],["Note","Role IDs (R##) and Activity IDs (A###) are stable. Other Workmatik tools match on these IDs. Load this file into the AI Workflow Assessment to pre-select workflow steps."]];
+  const meta = [["Field","Value"],["Tool",TOOL_NAME],["Tool key",TOOL_KEY],["Data version",DATA_VERSION],["Schema","workmatik-shared-ids-1"],["Organisation",clientName],["Exported",ts],["Roles in scope",metrics().scopedRoles],["Custom roles",cust.roles.length],["Custom activities",cust.acts.length],["Activities in scope",idxs.length],["Note","Role IDs (R##) and Activity IDs (A###) are stable. Other Workmatik tools match on these IDs. Load this file into the AI Workflow Assessment to pre-select workflow steps."]];
   const sel = [["Activity ID","Role ID","Group","Role","Role Type","Task","Activity","AI Suitability Classification","Default classification","Overridden"]];
   idxs.forEach(i=>{ const d = DATA[i]; sel.push([d.id,d.rid,groupOf[d.role],d.role,d.type,d.task,d.activity,cls(i),d.cls,ovr[i]?"Yes":"No"]); });
   const wb = XLSX.utils.book_new();
@@ -372,18 +456,26 @@ function bapExport(){
   XLSX.utils.book_append_sheet(wb,w1,"Workmatik data");
   XLSX.utils.book_append_sheet(wb,w2,"Selected activities");
   XLSX.utils.book_append_sheet(wb,w3,"All activities");
+  if(cust.roles.length || cust.acts.length){
+    const ci = [["Type","Role ID","Group","Role","Activity ID","Task","Activity","Classification"]];
+    cust.roles.forEach(r=>ci.push(["Role",r.rid,r.group,r.name,"","","",""]));
+    cust.acts.forEach(a=>{ const nm = (cust.roles.find(r=>r.rid===a.rid)||{}).name || BASE_RID[a.rid]; ci.push(["Activity",a.rid,groupOf[nm],nm,a.id,a.task,a.activity,a.cls]); });
+    const w4 = XLSX.utils.aoa_to_sheet(ci); w4["!cols"]=[{wch:10},{wch:8},{wch:30},{wch:36},{wch:11},{wch:34},{wch:56},{wch:22}];
+    XLSX.utils.book_append_sheet(wb,w4,"Custom items");
+  }
   XLSX.writeFile(wb,"Workmatik-AI-Roles-Assessment-export-" + sanitizeFileToken(clientName) + "-" + ts + ".xlsx");
 }
 window.bapExport = bapExport;
 
 function bapReset(){
-  if(scope.size === 0 && Object.keys(ovr).length === 0){
+  if(scope.size === 0 && Object.keys(ovr).length === 0 && !cust.roles.length && !cust.acts.length){
     return;
   }
-  const ok = confirm("Reset all role/activity selections and overrides back to defaults? This can't be undone.");
+  const ok = confirm("Reset all selections, overrides and custom roles and activities back to defaults? This can't be undone.");
   if(!ok) return;
   scope = new Set();
   ovr = {};
+  cust = {roles:[], acts:[], nr:0, na:0}; rebuildAll(); bapClientNameChange();
   vRole = null;
   vTask = null;
   currentTab = "plan";
@@ -398,7 +490,7 @@ function sanitizeFileToken(s){
 
 function bapClientNameChange(){
   const name = document.getElementById("clientName").value.trim();
-  document.getElementById("hsub").textContent = "31 roles · 519 activities" + (name ? " · " + name : "");
+  document.getElementById("hsub").textContent = roles.length + " roles · " + DATA.length + " activities" + (name ? " · " + name : "");
 }
 
 function bapSave(){
@@ -411,6 +503,7 @@ function bapSave(){
     savedAt: new Date().toISOString(),
     scopeIds: [...scope].sort((a,b)=>a-b).map(i=>DATA[i].id),
     overrideIds: Object.fromEntries(Object.keys(ovr).map(k=>[DATA[k].id, ovr[k]])),
+    custom: cust,
     scope: [...scope].sort((a,b)=>a-b),
     overrides: ovr
   };
@@ -455,6 +548,12 @@ function bapLoadFile(event){
         const wb = XLSX.read(e.target.result,{type:"array"});
         const ws = wb.Sheets["Selected activities"];
         if(!ws) throw new Error("no sheet");
+        const cw = wb.Sheets["Custom items"], cc = {roles:[], acts:[], nr:0, na:0};
+        if(cw) XLSX.utils.sheet_to_json(cw,{defval:""}).forEach(r=>{
+          if(r["Type"]==="Role") cc.roles.push({rid:r["Role ID"], name:r["Role"], group:r["Group"]});
+          else if(r["Type"]==="Activity") cc.acts.push({id:r["Activity ID"], rid:r["Role ID"], task:r["Task"], activity:r["Activity"], cls:r["Classification"]});
+        });
+        setCustom(cc);
         const rows = XLSX.utils.sheet_to_json(ws,{defval:""});
         const sc = [], ov = {};
         rows.forEach(r=>{
@@ -492,6 +591,7 @@ function bapLoadFile(event){
       reset();
       return;
     }
+    setCustom(data.custom);
     let sc = [], ov = {};
     if(Array.isArray(data.scopeIds)){
       data.scopeIds.forEach(id=>{ if(idToIdx[id]!==undefined) sc.push(idToIdx[id]); });
@@ -568,6 +668,56 @@ function renderDash(){
   el.innerHTML = h;
 }
 
+function showDlg(id,on){ document.getElementById(id).style.display = on ? "flex" : "none"; }
+function openRoleDlg(){
+  const g = document.getElementById("rGroup");
+  g.innerHTML = BASE_GROUPS.map(x=>'<option>' + esc(x.group) + '</option>').join('');
+  document.getElementById("rName").value = "";
+  document.getElementById("rErr").textContent = "";
+  showDlg("dlgRole", true);
+  document.getElementById("rName").focus();
+}
+function openActDlg(role, task){
+  const sel = document.getElementById("aRole");
+  sel.innerHTML = GROUPS.map(g=>'<optgroup label="' + esc(g.group) + '">' + g.roles.map(r=>'<option value="' + esc(r) + '"' + (r===role?' selected':'') + '>' + esc(r) + '</option>').join('') + '</optgroup>').join('');
+  if(role) sel.value = role;
+  document.getElementById("aTask").value = task || "";
+  document.getElementById("aAct").value = "";
+  document.getElementById("aCls").value = AUG;
+  document.getElementById("aErr").textContent = "";
+  document.getElementById("aOk").textContent = "";
+  fillTasks();
+  showDlg("dlgAct", true);
+  document.getElementById(task ? "aAct" : "aTask").focus();
+}
+function fillTasks(){
+  document.getElementById("taskList").innerHTML = tasksForRole(document.getElementById("aRole").value).map(t=>'<option value="' + esc(t) + '">').join('');
+}
+function submitRole(){
+  const name = cleanStr(document.getElementById("rName").value,80), group = document.getElementById("rGroup").value;
+  const err = document.getElementById("rErr");
+  if(!name){ err.textContent = "Enter a role name."; return; }
+  if(roles.some(r=>r.toLowerCase()===name.toLowerCase())){ err.textContent = "A role with that name already exists."; return; }
+  const rid = "RC" + pad(++cust.nr,2);
+  cust.roles.push({rid,name,group});
+  rebuildAll(); vRole = name; vTask = null; showDlg("dlgRole", false); refresh();
+  openActDlg(name, "");
+}
+function submitAct(keep){
+  const role = document.getElementById("aRole").value, task = cleanStr(document.getElementById("aTask").value,100), activity = cleanStr(document.getElementById("aAct").value,160), cl = document.getElementById("aCls").value;
+  const err = document.getElementById("aErr");
+  if(!task || !activity){ err.textContent = "Enter a task and an activity."; return; }
+  if(DATA.some(d=>d.role===role && d.task===task && d.activity.toLowerCase()===activity.toLowerCase())){ err.textContent = "That activity already exists in this task."; return; }
+  const rid = roleId[role];
+  if(!rid){ err.textContent = "Pick a role."; return; }
+  err.textContent = "";
+  cust.acts.push({id:"AC" + pad(++cust.na,3), rid, task, activity, cls:cl});
+  rebuildAll(); vRole = role; vTask = task; refresh();
+  document.getElementById("aOk").textContent = "Added: " + activity;
+  if(keep){ document.getElementById("aAct").value = ""; document.getElementById("aAct").focus(); } else showDlg("dlgAct", false);
+}
+window.submitRole = submitRole; window.submitAct = submitAct; window.showDlg = showDlg; window.fillTasks = fillTasks;
+
 document.getElementById("bap").addEventListener("click", ev=>{
   const el = ev.target.closest("[data-act]");
   if(!el) return;
@@ -578,6 +728,20 @@ document.getElementById("bap").addEventListener("click", ev=>{
   else if(act==="tt"){ toggleIdxs(tIdxs(el.dataset.r, el.dataset.t)); refresh(); }
   else if(act==="ta"){ const i=+el.dataset.i; scope.has(i)?scope.delete(i):scope.add(i); renderActs(); renderRoles(); renderTasks(); }
   else if(act==="sa"){ const idxs=tIdxs(vRole,vTask); toggleIdxs(idxs); refresh(); }
+  else if(act==="addR"){ openRoleDlg(); }
+  else if(act==="addA"){ openActDlg(vRole, vTask); }
+  else if(act==="rmA"){
+    if(!confirm("Remove this custom activity?")) return;
+    cust.acts = cust.acts.filter(a=>a.id!==el.dataset.id); rebuildAll();
+    if(vTask && !tIdxs(vRole,vTask).length) vTask = null;
+    refresh();
+  }
+  else if(act==="rmR"){
+    const r = cust.roles.find(x=>x.name===vRole); if(!r) return;
+    if(!confirm("Remove the custom role \"" + r.name + "\" and all its activities?")) return;
+    cust.roles = cust.roles.filter(x=>x.rid!==r.rid); cust.acts = cust.acts.filter(a=>a.rid!==r.rid);
+    rebuildAll(); vRole = null; vTask = null; refresh();
+  }
 });
 
 document.getElementById("bap").addEventListener("change", ev=>{
