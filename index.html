@@ -77,6 +77,9 @@ body{font-family:'Neue Haas Grotesk Display Pro',Helvetica,Arial,sans-serif;back
 .dlg .btns button.pri{background:#F25D27;border-color:#F25D27;color:#0D0D0D}
 .dlg .err{color:#B3261E;font-size:12px;min-height:16px;margin-top:6px}
 .dlg .ok{color:#0b6b2c;font-size:12px;min-height:16px}
+.dgroup{display:flex;justify-content:space-between;align-items:baseline;margin:16px 0 6px;padding-bottom:4px;border-bottom:2px solid #F25D27;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#024873}
+.dgroup:first-of-type{margin-top:4px}
+.dgfrac{font-weight:600;letter-spacing:0;text-transform:none;color:#4a5560}
 .slabel{font-size:10px;font-weight:700;color:#9FC9DD;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;padding-left:4px}
 .row{display:flex;align-items:center;gap:6px;margin-bottom:3px}
 .tick{width:17px;height:17px;border-radius:3px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;line-height:1;transition:all .12s}
@@ -652,13 +655,18 @@ function renderDash(){
   h += '</div>';
 
   h += '<div class="panel"><div class="ptitle">Activity Selection by Role</div>';
-  roles.forEach(r=>{
-    const idxs = rIdxs(r);
-    const sel = idxs.filter(i=>scope.has(i)).length;
-    const pct = Math.round(sel/idxs.length*100)||0;
-    const isNew = roleType[r]==="New AI-enabled role";
-    h += '<div class="rolebar"><div class="rolebar-top"><span class="rolebar-name">' + esc(r) + (isNew?'<span class="np">NEW</span>':'') + '</span><span class="rolebar-frac">' + sel + '/' + idxs.length + '</span></div>' +
-      '<div class="rolebar-track"><div class="rolebar-fill" style="width:' + pct + '%"></div></div></div>';
+  GROUPS.forEach(g=>{
+    const gi = g.roles.flatMap(r=>rIdxs(r));
+    const gs = gi.filter(i=>scope.has(i)).length;
+    h += '<div class="dgroup"><span>' + esc(g.group) + '</span><span class="dgfrac">' + gs + '/' + gi.length + ' activities</span></div>';
+    g.roles.forEach(r=>{
+      const idxs = rIdxs(r);
+      const sel = idxs.filter(i=>scope.has(i)).length;
+      const pct = Math.round(sel/idxs.length*100)||0;
+      const isNew = roleType[r]==="New AI-enabled role";
+      h += '<div class="rolebar"><div class="rolebar-top"><span class="rolebar-name">' + esc(r) + (isNew?'<span class="np">NEW</span>':'') + (roleType[r]==="Custom role"?'<span class="np cu">CUSTOM</span>':'') + '</span><span class="rolebar-frac">' + sel + '/' + idxs.length + '</span></div>' +
+        '<div class="rolebar-track"><div class="rolebar-fill" style="width:' + pct + '%"></div></div></div>';
+    });
   });
   h += '</div></div>';
 
