@@ -25,31 +25,6 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Neue Haas Grotesk Display Pro',Helvetica,Arial,sans-serif;background:#EAF9FF;color:#0D0D0D;min-height:100vh}
 #bap{display:flex;flex-direction:column;height:100vh;overflow:hidden}
-.hdr{background:#0D0D0D;padding:13px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 2px 12px rgba(0,0,0,0.25)}
-.htitle{font-size:17px;font-weight:700;color:#F25D27;letter-spacing:0.2px}
-.hsub{font-size:11px;color:#8A8A8A;margin-top:2px}
-.tabs{display:flex;gap:8px}
-.tab{padding:8px 20px;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit;transition:all .15s}
-.tab.on{background:#F25D27;color:#FFFFFF}
-.tab.off{background:rgba(255,255,255,0.1);color:#fff}
-.tab.off:hover{background:rgba(255,255,255,0.18)}
-#tabDash{background:#EAF9FF;color:#0D0D0D}
-#tabDash:hover{background:#D6EFFA}
-#tabExport{background:#034872;border:1.5px solid #034872;color:#FFFFFF}
-#tabExport:hover{background:#023A5E}
-#tabCsv{background:transparent;border:1.5px solid #034872;color:#5DC1FF}
-#tabCsv:hover{background:rgba(93,193,255,0.15)}
-#tabReset{background:transparent;border:1.5px solid #8A8A8A;color:#C9C9C9}
-#tabReset:hover{background:rgba(255,255,255,0.1);color:#fff}
-#tabSave{background:transparent;border:1.5px solid #5DC1FF;color:#5DC1FF}
-#tabSave:hover{background:rgba(93,193,255,0.15)}
-#tabLoad{background:transparent;border:1.5px solid #5DC1FF;color:#5DC1FF}
-#tabLoad:hover{background:rgba(93,193,255,0.15)}
-.clientwrap{display:flex;align-items:center;gap:6px;margin-left:20px}
-.clientlabel{font-size:10px;font-weight:700;color:#8A8A8A;text-transform:uppercase;letter-spacing:0.6px}
-#clientName{background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.15);border-radius:6px;padding:6px 10px;color:#fff;font-size:12px;font-family:inherit;width:160px}
-#clientName::placeholder{color:#8A8A8A}
-#clientName:focus{outline:none;border-color:#F25D27}
 .body{display:flex;flex:1;overflow:hidden}
 #plan{display:flex;flex:1;overflow:hidden}
 #dash{display:none;flex:1;overflow-y:auto;padding:24px;background:#EAF9FF}
@@ -155,36 +130,59 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .site-footer .wrap{max-width:1400px;margin:0 auto;padding:0 24px}.site-footer p{margin:0}
 main#main{flex:1;display:flex;flex-direction:column}
 #bap{height:calc(100vh - 40px);min-height:680px}
-.hdr{flex-wrap:wrap;gap:10px}
-.hsub{display:none}
 @media(max-width:700px){.site-header h1{font-size:24px}.tabs{flex-wrap:wrap}.clientwrap{margin-left:0}#bap{height:auto;min-height:100vh;overflow:visible}.body{overflow:visible;flex-direction:column}}
 @media print{.site-header{background:#fff;border-bottom:2px solid #F25D27}.tabs,.skip{display:none!important}}
+
+:root{--navy:#024873;--orange:#F25D27;--pale:#EAF9FF;--grey:#D9D9D9;--muted:#4A5560}
+.pagewrap{max-width:1400px;margin:0 auto;padding:20px 24px 0;width:100%}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;border-bottom:2px solid var(--grey)}
+.tab{font:inherit;font-weight:600;background:none;border:0;padding:10px 16px;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px}
+.tab:hover{color:var(--navy)}
+.tab[aria-selected="true"]{color:var(--navy);border-bottom-color:var(--orange)}
+.clientbar{display:flex;align-items:center;gap:10px;padding:10px 24px;background:#fff;border:1px solid var(--grey);border-radius:10px 10px 0 0;border-bottom:0;flex-shrink:0;flex-wrap:wrap}
+.clientbar label{font-size:13px;font-weight:600;color:var(--navy)}
+#clientName{border:1.5px solid #9FB4C2;border-radius:6px;padding:7px 10px;font-size:14px;font-family:inherit;width:240px}
+#clientName:focus{outline:2px solid var(--orange);outline-offset:1px}
+.clientbar .count{font-size:13px;color:var(--muted)}
+#bap{border-radius:0 0 10px 10px;border:1px solid var(--grey);height:calc(100vh - 80px);min-height:620px}
+.tkpanel{max-width:960px;margin:0 auto;padding:4px 0 32px;width:100%}
+.tkpanel[hidden]{display:none}
+.card{border:1px solid var(--grey);border-radius:10px;padding:16px 20px;margin-bottom:16px;background:#fff}
+.card h2{margin:0 0 8px;font-size:18px;color:var(--navy)}
+.card p{margin:0 0 10px;line-height:1.5}
+.card .hint{font-size:13px;color:var(--muted)}
+.info-box{background:var(--pale);border-left:4px solid #5DC1FF;border-radius:6px;padding:12px 16px;margin-bottom:16px;color:var(--navy)}
+.steps{padding-left:20px;margin:0}.steps li{margin-bottom:8px;line-height:1.5}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 4px}
+.btn{font:inherit;font-weight:600;display:inline-block;padding:9px 18px;border-radius:8px;border:2px solid var(--navy);background:#fff;color:var(--navy);cursor:pointer;text-decoration:none}
+.btn:hover{background:var(--pale)}
+.btn.primary{background:var(--orange);border-color:var(--orange);color:#0D0D0D}
+.btn.primary:hover{background:#C8431A;border-color:#C8431A;color:#fff}
+.btn.danger{border-color:#8A8A8A;color:#4A5560}
+.xgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.xgrid .card{margin:0;display:flex;flex-direction:column}
+.xgrid .card .actions{margin-top:auto;padding-top:8px}
 </style>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-header"><div class="wrap header-inner"><div><img class="logo" src="assets/logo-black.svg" alt="Workmatik"><h1>AI Roles Assessment</h1><p class="sub">Examine 31 marketing roles and 519 activities, and classify each as full automation, augmentation or human only.</p></div><p class="privacy-chip">Runs in your browser. Nothing is sent or stored.</p></div></header>
 <main id="main">
+<div class="pagewrap">
+  <div class="tabs" role="tablist" aria-label="Sections">
+    <button class="tab" role="tab" id="tabPlan" aria-controls="bap" aria-selected="true" onclick="bapSetTab('plan')">Activity Planner</button>
+    <button class="tab" role="tab" id="tabDash" aria-controls="bap" aria-selected="false" tabindex="-1" onclick="bapSetTab('dash')">Dashboard</button>
+    <button class="tab" role="tab" id="tabSave" aria-controls="panel-save" aria-selected="false" tabindex="-1" onclick="bapSetTab('save')">Save and export</button>
+    <button class="tab" role="tab" id="tabGuide" aria-controls="panel-guide" aria-selected="false" tabindex="-1" onclick="bapSetTab('guide')">How to use</button>
+    <button class="tab" role="tab" id="tabToolkit" aria-controls="panel-toolkit" aria-selected="false" tabindex="-1" onclick="bapSetTab('toolkit')">Back to AI Toolkit</button>
+  </div>
+</div>
+<div class="pagewrap" style="padding-top:0;flex:1;display:flex;flex-direction:column">
 <div id="bap">
-  <div class="hdr">
-    <div>
-      <div class="htitle">Activity planner</div>
-      <div class="hsub" id="hsub">31 roles &middot; 519 activities</div>
-    </div>
-    <div class="clientwrap">
-      <span class="clientlabel">Client</span>
-      <input type="text" id="clientName" placeholder="e.g. Acme Corp" oninput="bapClientNameChange()">
-    </div>
-    <div class="tabs">
-      <button class="tab off" id="tabSave" onclick="bapSave()">Save</button>
-      <button class="tab off" id="tabLoad" onclick="bapLoadClick()">Load</button>
-      <input type="file" id="loadFileInput" accept=".json,.xlsx" style="display:none" onchange="bapLoadFile(event)">
-      <button class="tab on" id="tabPlan" onclick="bapSetTab('plan')">Activity Planner</button>
-      <button class="tab off" id="tabDash" onclick="bapSetTab('dash')">Dashboard</button>
-      <button class="tab off" id="tabExport" onclick="bapExport()">Export Excel</button>
-      <button class="tab off" id="tabCsv" onclick="bapExportCsv()">CSV</button>
-      <button class="tab off" id="tabReset" onclick="bapReset()">Reset</button>
-    </div>
+  <div class="clientbar">
+    <label for="clientName">Client or organisation</label>
+    <input type="text" id="clientName" placeholder="e.g. Acme Corp" oninput="bapClientNameChange()">
+    <span class="count" id="hsub">31 roles &middot; 519 activities</span>
   </div>
   <div class="body">
     <div id="plan">
@@ -194,6 +192,41 @@ main#main{flex:1;display:flex;flex-direction:column}
     </div>
     <div id="dash"></div>
   </div>
+</div>
+<section class="tkpanel" id="panel-save" role="tabpanel" aria-labelledby="tabSave" hidden>
+  <div class="info-box"><strong>Keep your work.</strong> The planner does not keep your choices once you close the page. Download a file to keep them, and load it again later.</div>
+  <div class="xgrid">
+    <div class="card"><h2>Download Results (XLSX)</h2><p>The Excel file the other Workmatik tools read. It lists the activities in scope with their IDs and classifications, plus your own roles and activities.</p><p class="hint">Use this one before you leave for the AI Toolkit.</p><div class="actions"><button class="btn primary" type="button" onclick="bapExport()">Download Results (XLSX)</button></div></div>
+    <div class="card"><h2>Save to continue later</h2><p>A small file you can load back into this planner to carry on exactly where you stopped, including overrides and your own roles.</p><div class="actions"><button class="btn" type="button" onclick="bapSave()">Save</button> <button class="btn" type="button" onclick="bapLoadClick()">Load</button></div><input type="file" id="loadFileInput" accept=".json,.xlsx" style="display:none" onchange="bapLoadFile(event)"></div>
+    <div class="card"><h2>CSV</h2><p>The same selection as a plain CSV file, for a spreadsheet or another system.</p><div class="actions"><button class="btn" type="button" onclick="bapExportCsv()">Download CSV</button></div></div>
+    <div class="card"><h2>Start again</h2><p>Clears your selections, overrides and the client name. Download or save first if you want to keep them.</p><div class="actions"><button class="btn danger" type="button" onclick="bapReset()">Reset</button></div></div>
+  </div>
+</section>
+
+<section class="tkpanel" id="panel-guide" role="tabpanel" aria-labelledby="tabGuide" hidden>
+  <div class="card"><h2>What this tool does</h2><p>It helps you decide where AI could apply in a marketing function. You choose the roles and activities that matter to you, and each activity carries a starting classification: <strong>full automation</strong>, <strong>augmentation</strong> (AI supports, a person decides) or <strong>human only</strong>. You can override any classification.</p></div>
+  <div class="card"><h2>Using the planner</h2>
+    <ol class="steps">
+      <li><strong>Pick a role.</strong> Roles are in six groups, alphabetical within each group. Use <em>Find a role</em> to search. Tick a role to select all of its activities.</li>
+      <li><strong>Pick a task.</strong> Each role breaks into tasks. Select a task to see its activities.</li>
+      <li><strong>Select activities.</strong> Tick the activities that are part of the work you are assessing, or use <em>Select all</em>.</li>
+      <li><strong>Override if needed.</strong> The Default column shows the starting classification. Use the Override column to change it for your organisation.</li>
+      <li><strong>Add your own.</strong> Use <em>+ Add a role</em> or <em>+ Add an activity</em> if the starter list does not fit. Your own items get their own IDs and travel with your files.</li>
+      <li><strong>Check the Dashboard.</strong> It summarises your selection by role group and classification.</li>
+    </ol>
+  </div>
+  <div class="card"><h2>Save and export</h2><p>On the <em>Save and export</em> tab, <em>Download Results (XLSX)</em> gives the Excel file that the AI Workflow Assessment and the AI Toolkit read. <em>Save</em> and <em>Load</em> let you carry on later. <em>Reset</em> clears everything.</p></div>
+  <div class="card"><h2>Back to AI Toolkit</h2><p>The last tab, <em>Back to AI Toolkit</em>, takes you back to the Workmatik AI Toolkit: the guided path through all the Workmatik tools. Open it when you have finished here and want the next step. It shows what to do next and where to load your downloaded files to build the overall strategy.</p><p class="hint">Opening it does not save anything. Download your results first, because this page does not keep them once you leave it.</p></div>
+</section>
+
+<section class="tkpanel" id="panel-toolkit" role="tabpanel" aria-labelledby="tabToolkit" hidden>
+  <div class="card">
+    <h2>Back to the AI Toolkit</h2>
+    <p>The AI Toolkit guides you through the Workmatik AI Assessments in sequence and joins your downloaded files into one AI strategy.</p>
+    <p><strong>Before you leave:</strong> Use the &lsquo;Download Results&rsquo; button to save your current assessment if you haven&rsquo;t already. This page does not keep your choices once you close it.</p>
+    <div class="actions"><button class="btn" type="button" onclick="bapExport()">Download Results (XLSX)</button> <a class="btn primary" href="https://scottstockwellworkmatik.github.io/workmatik-ai-toolkit/">Back to AI Toolkit</a></div>
+  </div>
+</section>
 </div>
 </main>
 <div class="ovl" id="dlgRole" role="dialog" aria-modal="true" aria-labelledby="rT"><div class="dlg">
@@ -298,14 +331,29 @@ function toggleIdxs(idxs){
 }
 function cls(i){ return ovr[i] || DATA[i].cls; }
 
+const TAB_MAP = {plan:"tabPlan", dash:"tabDash", save:"tabSave", guide:"tabGuide", toolkit:"tabToolkit"};
 function bapSetTab(t){
-  currentTab = t;
-  document.getElementById("tabPlan").className = "tab " + (t==="plan"?"on":"off");
-  document.getElementById("tabDash").className = "tab " + (t==="dash"?"on":"off");
+  if(t==="plan"||t==="dash") currentTab = t;
+  Object.keys(TAB_MAP).forEach(k=>{
+    const b = document.getElementById(TAB_MAP[k]);
+    b.setAttribute("aria-selected", k===t?"true":"false");
+    b.tabIndex = k===t?0:-1;
+  });
+  const inBap = (t==="plan"||t==="dash");
+  document.getElementById("bap").style.display = inBap ? "flex" : "none";
   document.getElementById("plan").style.display = t==="plan" ? "flex" : "none";
   document.getElementById("dash").style.display = t==="dash" ? "block" : "none";
+  ["save","guide","toolkit"].forEach(k=>{ document.getElementById("panel-"+k).hidden = (k!==t); });
   if(t==="dash") renderDash();
+  window.scrollTo(0,0);
 }
+document.addEventListener("keydown", function(e){
+  const el = document.activeElement;
+  if(!el || el.getAttribute("role")!=="tab") return;
+  const ids = Object.keys(TAB_MAP); const i = ids.findIndex(k=>TAB_MAP[k]===el.id);
+  const d = e.key==="ArrowRight"?1:e.key==="ArrowLeft"?-1:0; if(!d) return;
+  e.preventDefault(); const n = ids[(i+d+ids.length)%ids.length]; bapSetTab(n); document.getElementById(TAB_MAP[n]).focus();
+});
 window.bapSetTab = bapSetTab;
 
 function renderRoles(){
