@@ -37,6 +37,8 @@ body{font-family:'Neue Haas Grotesk Display Pro',Helvetica,Arial,sans-serif;back
 .rfilter::placeholder{color:#9FC9DD}
 .rfilter:focus{outline:none;border-color:#F25D27}
 .addbtn{display:block;width:100%;margin:12px 0 0;padding:8px 10px;border:1.5px dashed rgba(93,193,255,.7);border-radius:6px;background:transparent;color:#5DC1FF;font:600 12px inherit;font-family:inherit;cursor:pointer;text-align:left}
+.rolego{display:block;width:100%;margin:10px 0 0;padding:10px;border:2px solid #F25D27;border-radius:8px;background:#F25D27;color:#0D0D0D;font:700 13px inherit;font-family:inherit;cursor:pointer}
+.rolego:hover{background:#C8431A;border-color:#C8431A;color:#fff}
 .addbtn:hover{background:rgba(93,193,255,.15)}
 .addbtn.rm{border-color:rgba(255,255,255,.3);color:#C9C9C9}
 .np.cu{background:rgba(242,93,39,.25);color:#F25D27}
@@ -206,7 +208,6 @@ main#main{flex:1;display:flex;flex-direction:column}
   <div class="xgrid">
     <div class="card"><h2>Download Results (XLSX)</h2><p>The Excel file the other Workmatik tools read. It lists the activities in scope with their IDs and classifications, plus your own roles and activities.</p><p class="hint">Use this one before you leave for the AI Toolkit.</p><div class="actions"><button class="btn primary" type="button" onclick="bapExport()">Download Results (XLSX)</button></div></div>
     <div class="card"><h2>Save to continue later</h2><p>A small file you can load back into this planner to carry on exactly where you stopped, including overrides and your own roles.</p><div class="actions"><button class="btn" type="button" onclick="bapSave()">Save</button> <button class="btn" type="button" onclick="bapLoadClick()">Load</button></div><input type="file" id="loadFileInput" accept=".json,.xlsx" style="display:none" onchange="bapLoadFile(event)"></div>
-    <div class="card"><h2>CSV</h2><p>The same selection as a plain CSV file, for a spreadsheet or another system.</p><div class="actions"><button class="btn" type="button" onclick="bapExportCsv()">Download CSV</button></div></div>
     <div class="card"><h2>Start again</h2><p>Clears your selections, overrides and your own roles and activities. The organisation stays. Download or save first if you want to keep them.</p><div class="actions"><button class="btn danger" type="button" onclick="bapReset()">Reset</button></div></div>
   </div>
 </section>
@@ -393,6 +394,8 @@ function renderRoles(){
   });
   if(!shown) h += '<div class="ph" style="padding:12px 4px;">No roles match</div>';
   h += '<button class="addbtn" data-act="addR">+ Add a role</button>';
+  h += '<button class="rolego" type="button" onclick="bapSetTab(\'dash\')">Go To Dashboard</button>';
+  h += '<button class="rolego" type="button" onclick="bapExport()">Save and Export</button>';
   const hadFocus = document.activeElement && document.activeElement.id === "rfilter";
   el.innerHTML = h;
   const f = document.getElementById("rfilter");
@@ -505,7 +508,7 @@ function bapExport(){
     Workmatik.notify("No activities selected yet. Use the Activity Planner to select roles and activities, then export.");
     return;
   }
-  if(typeof XLSX === "undefined"){ Workmatik.notify("The Excel library did not load. Try the CSV export instead."); return; }
+  if(typeof XLSX === "undefined"){ Workmatik.notify("The Excel library did not load. "); return; }
   const clientName = document.getElementById("clientName").value.trim();
   const ts = new Date().toISOString().slice(0,10);
   const meta = Workmatik.metaRows(TOOL_NAME,TOOL_KEY,DATA_VERSION,[["Workflow file used",wfFile?wfFile.name:""],["Activities ticked that no workflow uses",wfFile?[...scope].filter(i=>!wfUse[i]).length:""],["Roles in scope",metrics().scopedRoles],["Custom roles",cust.roles.length],["Custom activities",cust.acts.length],["Activities in scope",idxs.length],["Note","Role IDs (R##) and Activity IDs (A###) are stable. Other Workmatik tools match on these IDs. Load this file into the AI Workflow Assessment to pre-select workflow steps."]]);
