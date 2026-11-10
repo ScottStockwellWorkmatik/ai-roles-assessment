@@ -146,12 +146,12 @@ main#main{flex:1;display:flex;flex-direction:column}
 .tab{font:inherit;font-weight:600;background:none;border:0;padding:10px 16px;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px}
 .tab:hover{color:var(--navy)}
 .tab[aria-selected="true"]{color:var(--navy);border-bottom-color:var(--orange)}
-.clientbar{display:flex;align-items:center;gap:10px;padding:10px 24px;background:#fff;border:1px solid var(--grey);border-radius:10px 10px 0 0;border-bottom:0;flex-shrink:0;flex-wrap:wrap}
+.clientbar{display:flex;align-items:center;gap:10px;padding:10px 24px;background:#fff;border:0;border-radius:0;flex-shrink:0;flex-wrap:wrap}
 .clientbar label{font-size:13px;font-weight:600;color:var(--navy)}
 #clientName{border:1.5px solid #9FB4C2;border-radius:6px;padding:7px 10px;font-size:14px;font-family:inherit;width:240px}
 #clientName:focus{outline:2px solid var(--orange);outline-offset:1px}
 .clientbar .count{font-size:13px;color:var(--muted)}
-#bap{border-radius:0 0 10px 10px;border:1px solid var(--grey);height:calc(100vh - 80px);min-height:620px}
+#bap{border:0;border-radius:0;height:calc(100vh - 80px);min-height:620px}
 .tkpanel{max-width:960px;margin:0 auto;padding:4px 0 32px;width:100%}
 .tkpanel[hidden]{display:none}
 .card{border:1px solid var(--grey);border-radius:10px;padding:16px 20px;margin-bottom:16px;background:#fff}
@@ -599,14 +599,14 @@ function renderWfBanner(){
   const el = document.getElementById("wfBanner"); if(!el) return;
   if(!wfFile){
     el.className = "wfbanner";
-    el.innerHTML = '<div><strong>Start from your work.</strong> Load your AI Workflow Assessment file (or drop it anywhere on this page) and the activities your selected workflows need are ticked for you. The full list stays available.</div>' +
+    el.innerHTML = '<div><strong>Start from your work (optional).</strong> If you have already picked your workflows in the AI Workflow Assessment, load the Workflow file you saved there and the activities those workflows need are ticked for you. You do not need scores yet: the Workflow file is saved before scoring. No file yet? Tick your roles and activities below and bring this file back to the Workflow Assessment afterwards. The full list stays available either way.</div>' +
       '<div><button class="btn" type="button" onclick="document.getElementById(\'wfFileInput\').click()">Load my Workflow file</button><input type="file" id="wfFileInput" accept=".xlsx" style="display:none" onchange="bapLoadWorkflow(event)"></div>';
     return;
   }
   const extra = [...scope].filter(i=>!wfUse[i]).length;
   el.className = "wfbanner done";
   el.innerHTML = '<div><strong>Workflow file loaded:</strong> ' + esc(wfFile.name) + '. ' + wfFile.nwf + (wfFile.nwf===1?' workflow':' workflows') + ' selected, ' + wfFile.nact + ' activities ticked from them.' +
-    (extra ? ' <strong>' + extra + (extra===1?' activity is':' activities are') + ' ticked that no workflow uses.</strong> Download this file and load it back into the Workflow Assessment to add the missing work.' : ' Everything ticked is used by a workflow.') +
+    (extra ? ' <strong>' + extra + (extra===1?' activity is':' activities are') + ' ticked that no workflow uses.</strong> Download this file, then load it back into the Workflow Assessment to add the missing work before you score.' : ' Everything ticked is used by a workflow. Next: download this file and load it back into the Workflow Assessment, then score.') +
     (wfFile.skipped ? ' ' + wfFile.skipped + ' step(s) used custom activities that are not in this planner and were skipped.' : '') + '</div>' +
     '<div><button class="btn" type="button" onclick="document.getElementById(\'wfFileInput\').click()">Load a different file</button><input type="file" id="wfFileInput" accept=".xlsx" style="display:none" onchange="bapLoadWorkflow(event)"></div>';
 }
