@@ -70,6 +70,11 @@ body{font-family:'Neue Haas Grotesk Display Pro',Helvetica,Arial,sans-serif;back
 .tbtn.act{background:#5DC1FF;color:#0D0D0D;font-weight:700}
 .tbtn.sel{background:rgba(255,255,255,0.1);color:#BEE3F5}
 .tbtn.idl{background:rgba(255,255,255,0.04);color:#8FB6CB}
+.wfbanner{margin:0 0 10px;padding:10px 14px;border-radius:8px;background:#EAF9FF;border:1.5px solid #5DC1FF;font-size:13px;color:#024873;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.wfbanner.done{background:#E9F7EF;border-color:#2E9E5B}
+.wfuse{display:inline-block;margin-left:6px;font-size:10px;padding:1px 6px;border-radius:8px;background:#E9F7EF;color:#1d6b3e;font-weight:700;white-space:nowrap}
+.wfuse.extra{background:#FFF3EC;color:#a8420f}
+.rbtn.wfneed{box-shadow:inset 4px 0 0 #2E9E5B}
 .np{display:inline-block;margin-left:4px;font-size:9px;padding:1px 5px;border-radius:8px;background:rgba(93,193,255,0.25);color:#5DC1FF;font-weight:700;vertical-align:middle}
 .ahdr{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px}
 .atitle{font-size:16px;font-weight:700;color:#0D0D0D;margin-top:2px}
@@ -186,6 +191,7 @@ main#main{flex:1;display:flex;flex-direction:column}
     <input type="hidden" id="clientName">
     <span class="count" id="hsub">31 roles &middot; 519 activities</span>
   </div>
+  <div id="wfBanner" class="wfbanner"></div>
   <div class="body">
     <div id="plan">
       <div class="rp" id="rpanel"></div>
@@ -259,6 +265,8 @@ const C = {primary:"#F25D27", blue:"#5DC1FF", darkblue:"#024873", pale:"#EAF9FF"
 
 let scope = new Set();
 let ovr = {};
+let wfUse = {};
+let wfFile = null;
 let vRole = null, vTask = null;
 let currentTab = "plan";
 
@@ -375,7 +383,7 @@ function renderRoles(){
       const st = stateOf(idxs);
       const tickCls = st==="all"?"all":st==="part"?"part":"none";
       const tickChar = st==="all"?"&#10003;":st==="part"?"&minus;":"";
-      const btnCls = vRole===r ? "act" : (st!=="none" ? "sel" : "idl");
+      const btnCls = (vRole===r ? "act" : (st!=="none" ? "sel" : "idl")) + (idxs.some(i=>wfUse[i]) ? " wfneed" : "");
       const isNew = roleType[r] === "New AI-enabled role";
       h += '<div class="row">' +
         '<div class="tick ' + tickCls + '" data-act="tr" data-r="' + esc(r) + '">' + tickChar + '</div>' +
@@ -430,7 +438,7 @@ function renderActs(){
     const c = cls(i);
     h += '<div class="arow ' + (sel?"sel":"") + '">' +
       '<div class="achk ' + (sel?"on":"off") + '" data-act="ta" data-i="' + i + '">' + (sel?"&#10003;":"") + '</div>' +
-      '<div class="aname">' + esc(DATA[i].activity) + (DATA[i].custom?' <button class="lnk" data-act="rmA" data-id="' + DATA[i].id + '">Remove</button>':'') + '</div>' +
+      '<div class="aname">' + esc(DATA[i].activity) + (wfUse[i] ? '<span class="wfuse" title="' + esc(wfUse[i].join('; ')) + '">used by ' + wfUse[i].length + (wfUse[i].length===1?' workflow':' workflows') + '</span>' : (wfFile && sel ? '<span class="wfuse extra" title="Ticked, but none of your selected workflows uses it">not in a workflow</span>' : '')) + (DATA[i].custom?' <button class="lnk" data-act="rmA" data-id="' + DATA[i].id + '">Remove</button>':'') + '</div>' +
       '<div style="width:150px"><span class="badge ' + badgeCls(DATA[i].cls) + '">' + esc(DATA[i].cls) + '</span></div>' +
       '<div style="width:150px"><select class="osel ' + (isOvr?"ovr":"def") + '" data-act="ov" data-i="' + i + '">' +
         '<option value="">' + (isOvr?"Reset to default":"No override") + '</option>' +
@@ -500,9 +508,9 @@ function bapExport(){
   if(typeof XLSX === "undefined"){ alert("The Excel library did not load. Try the CSV export instead."); return; }
   const clientName = document.getElementById("clientName").value.trim();
   const ts = new Date().toISOString().slice(0,10);
-  const meta = Workmatik.metaRows(TOOL_NAME,TOOL_KEY,DATA_VERSION,[["Roles in scope",metrics().scopedRoles],["Custom roles",cust.roles.length],["Custom activities",cust.acts.length],["Activities in scope",idxs.length],["Note","Role IDs (R##) and Activity IDs (A###) are stable. Other Workmatik tools match on these IDs. Load this file into the AI Workflow Assessment to pre-select workflow steps."]]);
-  const sel = [["Activity ID","Role ID","Group","Role","Role Type","Task","Activity","AI Suitability Classification","Default classification","Overridden"]];
-  idxs.forEach(i=>{ const d = DATA[i]; sel.push([d.id,d.rid,groupOf[d.role],d.role,d.type,d.task,d.activity,cls(i),d.cls,ovr[i]?"Yes":"No"]); });
+  const meta = Workmatik.metaRows(TOOL_NAME,TOOL_KEY,DATA_VERSION,[["Workflow file used",wfFile?wfFile.name:""],["Activities ticked that no workflow uses",wfFile?[...scope].filter(i=>!wfUse[i]).length:""],["Roles in scope",metrics().scopedRoles],["Custom roles",cust.roles.length],["Custom activities",cust.acts.length],["Activities in scope",idxs.length],["Note","Role IDs (R##) and Activity IDs (A###) are stable. Other Workmatik tools match on these IDs. Load this file into the AI Workflow Assessment to pre-select workflow steps."]]);
+  const sel = [["Activity ID","Role ID","Group","Role","Role Type","Task","Activity","AI Suitability Classification","Default classification","Overridden","In a selected workflow"]];
+  idxs.forEach(i=>{ const d = DATA[i]; sel.push([d.id,d.rid,groupOf[d.role],d.role,d.type,d.task,d.activity,cls(i),d.cls,ovr[i]?"Yes":"No",wfFile?(wfUse[i]?"Yes":"No"):""]); });
   const wb = XLSX.utils.book_new();
   const w1 = XLSX.utils.aoa_to_sheet(meta); w1["!cols"]=[{wch:20},{wch:90}];
   const w2 = XLSX.utils.aoa_to_sheet(sel); w2["!cols"]=[{wch:11},{wch:8},{wch:30},{wch:36},{wch:20},{wch:34},{wch:56},{wch:26},{wch:22},{wch:11}];
@@ -529,7 +537,7 @@ function bapReset(){
   }
   const ok = confirm("Reset all selections, overrides and custom roles and activities back to defaults? This can't be undone.");
   if(!ok) return;
-  scope = new Set();
+  scope = new Set(); wfUse = {}; wfFile = null;
   ovr = {};
   cust = {roles:[], acts:[], nr:0, na:0}; rebuildAll(); bapClientNameChange();
   vRole = null;
@@ -584,15 +592,70 @@ function bapLoadClick(){
   document.getElementById("loadFileInput").click();
 }
 window.bapLoadClick = bapLoadClick;
-Workmatik.enableDrop(function(files){
-  Workmatik.identify(files[0]).then(function(it){
-    if(it.kind==="other" || (it.kind==="xlsx" && it.tool!=="roles")){
-      alert(files[0].name+" is not an AI Roles Assessment file. Drop the Excel export or the Save file from this tool.");
-      return;
-    }
-    bapLoadFile({target:{files:[files[0]], value:""}});
+
+// ----- Workflow file: pre-tick the activities your selected workflows need
+function renderWfBanner(){
+  const el = document.getElementById("wfBanner"); if(!el) return;
+  if(!wfFile){
+    el.className = "wfbanner";
+    el.innerHTML = '<div><strong>Start from your work.</strong> Load your AI Workflow Assessment file (or drop it anywhere on this page) and the activities your selected workflows need are ticked for you. The full list stays available.</div>' +
+      '<div><button class="btn" type="button" onclick="document.getElementById(\'wfFileInput\').click()">Load my Workflow file</button><input type="file" id="wfFileInput" accept=".xlsx" style="display:none" onchange="bapLoadWorkflow(event)"></div>';
+    return;
+  }
+  const extra = [...scope].filter(i=>!wfUse[i]).length;
+  el.className = "wfbanner done";
+  el.innerHTML = '<div><strong>Workflow file loaded:</strong> ' + esc(wfFile.name) + '. ' + wfFile.nwf + (wfFile.nwf===1?' workflow':' workflows') + ' selected, ' + wfFile.nact + ' activities ticked from them.' +
+    (extra ? ' <strong>' + extra + (extra===1?' activity is':' activities are') + ' ticked that no workflow uses.</strong> Download this file and load it back into the Workflow Assessment to add the missing work.' : ' Everything ticked is used by a workflow.') +
+    (wfFile.skipped ? ' ' + wfFile.skipped + ' step(s) used custom activities that are not in this planner and were skipped.' : '') + '</div>' +
+    '<div><button class="btn" type="button" onclick="document.getElementById(\'wfFileInput\').click()">Load a different file</button><input type="file" id="wfFileInput" accept=".xlsx" style="display:none" onchange="bapLoadWorkflow(event)"></div>';
+}
+function applyWorkflowBuffer(buf, name){
+  if(typeof XLSX === "undefined"){ alert("The Excel library did not load."); return; }
+  let wb;
+  try{ wb = XLSX.read(buf,{type:"array"}); }catch(e){ alert("That file could not be read."); return; }
+  const ws = wb.Sheets["Steps"];
+  if(!ws){ alert(name + " is not an AI Workflow Assessment file (it has no Steps sheet). Use the Excel file downloaded from the AI Workflow Assessment."); return; }
+  const kv = {}, mw = wb.Sheets["Workmatik data"];
+  if(mw) XLSX.utils.sheet_to_json(mw,{header:1}).forEach(r=>{ if(r[0]!==undefined && r[0]!=="Field") kv[String(r[0])] = r[1]; });
+  const chk = Workmatik.check(kv);
+  if(!chk.ok && !confirm(chk.message + " Load it anyway?")) return;
+  Workmatik.prefillFrom(kv);
+  const on = {}, sw = wb.Sheets["Scoring"];
+  if(sw) XLSX.utils.sheet_to_json(sw,{defval:""}).forEach(r=>{ if(String(r["Included"]).trim()==="Y") on[String(r["ID"]).trim()] = true; });
+  const names = {}, use = {}; let skipped = 0;
+  XLSX.utils.sheet_to_json(ws,{defval:""}).forEach(r=>{
+    const wid = String(r["Workflow ID"]).trim();
+    if(sw && !on[wid]) return;
+    names[wid] = true;
+    if(String(r["Included"]).trim()!=="Y") return;
+    const aid = String(r["Activity ID"]).trim(); if(!aid) return;
+    const i = idToIdx[aid]; if(i===undefined){ skipped++; return; }
+    const w = String(r["Workflow"]);
+    (use[i] = use[i] || []);
+    if(use[i].indexOf(w)<0) use[i].push(w);
   });
-},{label:"Drop your saved Roles file"});
+  const idx = Object.keys(use).map(Number);
+  if(!idx.length){ alert("No selected workflow in that file has steps that match this planner's activities."); return; }
+  wfUse = use; idx.forEach(i=>scope.add(i));
+  wfFile = {name:name, nwf:Object.keys(names).length, nact:idx.length, skipped:skipped};
+  refresh(); renderWfBanner();
+}
+function bapLoadWorkflow(event){
+  const file = event.target.files[0]; event.target.value = ""; if(!file) return;
+  const rd = new FileReader(); rd.onload = e=>applyWorkflowBuffer(e.target.result, file.name); rd.readAsArrayBuffer(file);
+}
+window.bapLoadWorkflow = bapLoadWorkflow;
+Workmatik.enableDrop(function(files){
+  files.forEach(function(f){
+    Workmatik.identify(f).then(function(it){
+      if(it.kind==="json" || (it.kind==="xlsx" && it.tool==="roles")){ bapLoadFile({target:{files:[f], value:""}}); return; }
+      if(it.kind==="xlsx" && (it.tool==="workflow" || (it.sheets && it.sheets.indexOf("Steps")>=0 && it.tool!=="capability"))){
+        const rd = new FileReader(); rd.onload = e=>applyWorkflowBuffer(e.target.result, f.name); rd.readAsArrayBuffer(f); return;
+      }
+      alert(f.name+" is not a file this tool loads. Drop your AI Workflow Assessment file to tick the activities your workflows need, or a saved Roles file to carry on.");
+    });
+  });
+},{label:"Drop your Workflow file or a saved Roles file"});
 
 function applyLoaded(scopeIdx, ovrMap, client, unit){
   scope = new Set(scopeIdx);
@@ -830,6 +893,7 @@ document.getElementById("bap").addEventListener("change", ev=>{
 });
 
 function refresh(){
+  renderWfBanner();
   renderRoles();
   renderTasks();
   renderActs();
