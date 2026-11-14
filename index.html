@@ -58,6 +58,7 @@ body{font-family:'Neue Haas Grotesk Display Pro',Helvetica,Arial,sans-serif;back
 .dgroup{display:flex;justify-content:space-between;align-items:baseline;margin:16px 0 6px;padding-bottom:4px;border-bottom:2px solid #024873;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#024873}
 .dgroup:first-of-type{margin-top:4px}
 .dgfrac{font-weight:600;letter-spacing:0;text-transform:none;color:#4a5560}
+.rmeta{margin:0 0 12px;padding:8px;border-radius:6px;background:rgba(255,255,255,0.06);color:#fff;font-size:11.5px}.rmeta summary{cursor:pointer;font-weight:700}.rmeta label{display:block;margin-top:8px}.rmeta select,.rmeta input{display:block;width:100%;margin-top:3px;padding:5px;border-radius:4px;border:1px solid #9FC9DD;font:inherit;color:#1B2A3A;background:#fff;box-sizing:border-box}.rmeta .hint{margin:8px 0 0;opacity:.85;font-size:10.5px}
 .slabel{font-size:10px;font-weight:700;color:#9FC9DD;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;padding-left:4px}
 .row{display:flex;align-items:center;gap:6px;margin-bottom:3px}
 .tick{width:17px;height:17px;border-radius:3px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;line-height:1;transition:all .12s}
@@ -269,6 +270,12 @@ let ovr = {};
 let wfUse = {};
 let wfFile = null;
 let vRole = null, vTask = null;
+// Optional details per role (level, FTE, baseline work mode). Kept in memory only, saved in the Excel file.
+let roleMeta = {};
+const ROLE_LEVELS = ["Junior practitioners","Senior practitioners","Managers","Directors"];
+const ROLE_MODES = ["Strategist","Orchestrator","Builder","Governor","Practitioner"];
+function rmetaSet(k,v){ const m = roleMeta[vRole] = roleMeta[vRole] || {}; if(k==="fte"){ const n = parseFloat(v); if(isNaN(n)||n<0) delete m.fte; else m.fte = n; } else if(v) m[k] = v; else delete m[k]; if(!Object.keys(m).length) delete roleMeta[vRole]; }
+window.rmetaSet = rmetaSet;
 let currentTab = "plan";
 
 const GROUPS = [{"group": "Strategy and planning", "roles": ["Brand Strategist", "Competitive Intelligence Analyst", "Customer Insights Analyst", "Marketing Planning and Budget Manager"]}, {"group": "Content and creative", "roles": ["Content Strategist", "Content Writer / Copywriter", "Creative and Design Specialist", "Localisation Specialist", "Synthetic Content Specialist"]}, {"group": "Demand and channels", "roles": ["ABM Specialist", "Demand Generation Specialist", "Email Marketing Specialist", "Performance Marketing Specialist", "SEO Specialist", "Social Media Specialist", "Website and Digital Experience Specialist"]}, {"group": "Go-to-market and relationships", "roles": ["Customer Marketing Specialist", "Event Marketing Specialist", "Field Marketing Specialist", "Partner Marketing Specialist", "PR / Communications Specialist", "Product Marketing Manager"]}, {"group": "Operations, data and delivery", "roles": ["Agency and Vendor Manager", "Campaign and Project Manager", "Marketing Data Analyst", "Marketing Operations Specialist", "Revenue Operations Specialist"]}, {"group": "AI and emerging", "roles": ["AEO/GEO Specialist", "AI Marketing Operations Specialist", "Conversational AI Specialist", "Marketing AI Governance Specialist"]}];
@@ -408,6 +415,12 @@ function renderTasks(){
   if(!vRole){ el.innerHTML = '<div class="ph" style="padding:20px;text-align:center;">Select a role</div>'; return; }
   const tasks = tasksForRole(vRole);
   let h = '<div class="slabel">' + esc(vRole) + '</div>';
+  const rm = roleMeta[vRole] || {};
+  h += '<details class="rmeta"' + (Object.keys(rm).length ? ' open' : '') + '><summary>About this role (optional)</summary>' +
+    '<label>Usual level<select aria-label="Usual level of this role" onchange="rmetaSet(\'level\',this.value)"><option value="">Not set</option>' + ROLE_LEVELS.map(x=>'<option' + (rm.level===x?' selected':'') + '>' + x + '</option>').join('') + '</select></label>' +
+    '<label>FTE today<input type="number" min="0" step="0.5" aria-label="FTE in this role today" value="' + (rm.fte!=null?rm.fte:'') + '" onchange="rmetaSet(\'fte\',this.value)"></label>' +
+    '<label>Usual work mode<select aria-label="Usual work mode for this role" onchange="rmetaSet(\'mode\',this.value)"><option value="">Not set</option>' + ROLE_MODES.map(x=>'<option' + (rm.mode===x?' selected':'') + '>' + x + '</option>').join('') + '</select></label>' +
+    '<p class="hint">If the role spans levels, use the level with the most people today. The work mode is the type of person this role usually needs, not a fixed rule. All three are optional; the Toolkit uses them to draw the shape of your team.</p></details>';
   tasks.length || (h += '<div class="ph" style="padding:12px 4px;height:auto;">No activities yet</div>');
   tasks.forEach(t=>{
     const idxs = tIdxs(vRole,t);
@@ -530,6 +543,8 @@ function bapExport(){
     const w4 = XLSX.utils.aoa_to_sheet(ci); w4["!cols"]=[{wch:10},{wch:8},{wch:30},{wch:36},{wch:11},{wch:34},{wch:56},{wch:22}];
     XLSX.utils.book_append_sheet(wb,w4,"Custom items");
   }
+  const rmRows = Object.keys(roleMeta).map(r=>{ const m = roleMeta[r], ix = rIdxs(r); return [ix.length?DATA[ix[0]].rid:"", r, m.level||"", m.fte!=null?m.fte:"", m.mode||""]; });
+  if(rmRows.length){ const w5 = XLSX.utils.aoa_to_sheet([["Role ID","Role","Usual level","FTE today","Usual work mode"]].concat(rmRows)); w5["!cols"]=[{wch:8},{wch:36},{wch:24},{wch:10},{wch:18}]; XLSX.utils.book_append_sheet(wb,w5,"Role details"); }
   XLSX.writeFile(wb,Workmatik.fileName("roles"));
 }
 window.bapExport = bapExport;
@@ -541,7 +556,7 @@ function bapReset(){
   Workmatik.confirm("Reset all selections, overrides and custom roles and activities back to defaults? This can't be undone.",{title:"Start again?",ok:"Start again",danger:true}).then(function(ok){ if(ok) doReset(); });
 }
 function doReset(){
-  scope = new Set(); wfUse = {}; wfFile = null;
+  scope = new Set(); wfUse = {}; wfFile = null; roleMeta = {};
   ovr = {};
   cust = {roles:[], acts:[], nr:0, na:0}; rebuildAll(); bapClientNameChange();
   vRole = null;
@@ -708,6 +723,9 @@ function bapLoadFile(event){
               if([FA,AUG,HO].includes(c) && c !== DATA[i].cls) ov[i] = c;
             });
             if(!sc.length) throw new Error("none");
+            const rmw = wb.Sheets["Role details"], rmd = {};
+            if(rmw) XLSX.utils.sheet_to_json(rmw,{defval:""}).forEach(r=>{ const nm = String(r["Role"]).trim(); if(!nm) return; const m = {}; const lv = String(r["Usual level"]).trim(), md = String(r["Usual work mode"]).trim(), f = parseFloat(r["FTE today"]); if(ROLE_LEVELS.includes(lv)) m.level = lv; if(ROLE_MODES.includes(md)) m.mode = md; if(!isNaN(f)&&f>=0) m.fte = f; if(Object.keys(m).length) rmd[nm] = m; });
+            roleMeta = rmd;
             applyLoaded(sc,ov,String(kv["Organisation"]||""),String(kv["Business unit"]||""));
           }catch(err){
             Workmatik.notify("This file couldn't be read as an AI Roles Assessment export.");
